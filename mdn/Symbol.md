@@ -63,3 +63,41 @@ They are known as well-knwon Symbols, and their purpose is to serve a "protocols
 allowing users to customize the language's behavior.
 For example, if a constructor function has a method with `Symbol.hasInstance` as its name, this method will encode its behavior with the `instanceof` operator.
 
+Prior to well-known Symbols, JavaScript used normal properties to implement certain built-in operations.
+For example, the `JSON.stringify` function will attempt to call each object's `toJSON()` method, and the `String` function will call the object's `toString()` and `valueOf()` methods.
+However, as more operations are added to the language, designating each operation a "magic property" can break backward compatibility and make the language's behavior harder to reason with.
+Well-known Symbols allow the customizations to be "invisible" from normal code, which typically only read string properties.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
