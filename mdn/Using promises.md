@@ -105,7 +105,175 @@ doSomething()
 Note: Arrow function expressions can have an implicit return; so, `() => x` is short for `() => { return x; }`.
 
 `doSomethingElse` and `doThirdThing` can return any value — if they return promises,
-that promise is first waited until it settles
+that promise is first watied until it settles, and the next callback receives the fulfillment value,
+not the promise itself.
+It is important to always return promises from `then` callbacks, even if the promise always resolves to `undefined`.
+If the previous handler started a promise but did not return it, there's no way to track its settlement anymore, 
+and the promise is said to be "floating".
+
+```js
+doSomething()
+  .then(url => {
+    // Missing `return` keyword in front of fetch(url).
+    fetch(url);
+  })
+  .then(result => {
+    // result is undefined, because nothing is returned from the previous
+    // handler. There's no way to know the return value of the fetch()
+    // call anymore, or whether it succeeded at all.
+  });
+```
+
+By returning the result of the `fetch` call (which is a promise), we can both track its completion and receive its value when it completes.
+
+```js
+doSomething()
+  .then(url => {
+    // `return` keyword added
+    return fetch(url);
+  })
+  .then(result => {
+    // result is a Response object
+  });
+```
+
+Floating promises could be worse if you have race conditions — if the promise from the last handler is not returned,
+the next `then` handler will be called early, and any value it reads may be incomplete.
+
+```js
+const listOfIngredients = [];
+
+doSomething()
+  .then(url => {
+    // Missing `return` keyword in front of fetch(url).
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        listOfIngredients.push(data);
+      });
+  })
+  .then(() => {
+    console.log(listOfIngredients);
+    // listOfIngredients will always be [], because the fetch request hasn't completed yet.
+  });
+```
+
+Therefore, as a rule of thumb, whenever your operation encounters a promise,
+return it and defer its handling to the next `then` handler.
+
+```js
+const listOfIngredients = [];
+
+doSomething()
+  .then(url => {
+    return fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        listOfIngredients.push(data);
+      });
+  })
+  .then(() => {
+    console.log(listOfIngredients);
+    // listOfIngredients will now contains data from fetch call.
+  });
+```
+
+Event better, you can flattern the nested chain into a single chain, which is simpler and makes error handling easier.
+The details are discussed in the Nesting section below.
+
+```js
+doSomething()
+  .then(url => fetch(url))
+  .then(res => res.json())
+  .then(data => {
+    listOfIngredients.push(data);
+  })
+  .then(() => {
+    console.log(listOfIngredients);
+  });
+```
+
+Using `async / await` can help you write code that's more intuitive and resembles synchronous code.
+Below is the same exameple using `async / await`.
+
+```js
+async function logIngredients() {
+  const url = await doSomething();
+  const res = await fetch(url);
+  const data = await res.json();
+  listOfIngredients.push(data);
+  console.log(listOfIngredients);
+}
+```
+
+Note how the code looks exactly like synchronous code, except for the `await` keywords in front of promises.
+One of the only tradeoffs is that it may be easy to forget the `await` keyword, which can only be fixed when there's type mismatch
+(e.g., trying to use a promise as a value).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
